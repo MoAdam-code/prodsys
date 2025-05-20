@@ -369,6 +369,36 @@ class PostProcessor:
         df = df.groupby(by=["Product_type"])["Throughput_time"].mean()
         return df
 
+    def df_subsystem_throughput(self, left_station, right_station ) -> pd.DataFrame: #no distinction between different process times is suboptimal
+        df = self.df_prepared.copy()
+
+        move_in = ((df["Target location"] == left_station) & (df["Activity"] == "end state")) & (df["Empty Transport"] == False)
+        move_in_df = df.loc[move_in, ["Product", "Product_type", "Time"]].copy()
+        move_in_df.rename(columns={"Time": "MoveInTime"}, inplace=True)
+        
+        move_away = ((df["Origin location"] == right_station) & (df["Activity"] == "start state")) & (df["Empty Transport"] == False)
+        move_away_df = df.loc[move_away, ["Product", "Product_type", "Time"]].copy()
+        move_away_df.rename(columns={"Time": "MoveAwayTime"}, inplace=True)
+    
+        # Sort for merge_asof
+        move_in_df = move_in_df.sort_values(["MoveInTime"])
+        move_away_df = move_away_df.sort_values(["MoveAwayTime"])
+
+        # For each move-in, find the next move-away for the same product
+        merged = pd.merge_asof(
+            move_in_df,
+            move_away_df,
+            by="Product",
+            left_on="MoveInTime",
+            right_on="MoveAwayTime",
+            direction="forward",
+            suffixes=("", "_out")
+        )
+
+        # Calculate the throughput time
+        merged["Throughput Time"] = merged["MoveAwayTime"] - merged["MoveInTime"]
+        return merged.loc[merged["Throughput Time"]>0][["Product_type", "Product", "Throughput Time"]].groupby("Product_type")["Throughput Time"].mean().reset_index()
+
     @cached_property
     def aggregated_throughput_time_KPIs(self) -> List[performance_indicators.KPI]:
         """
