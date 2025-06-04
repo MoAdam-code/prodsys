@@ -862,13 +862,13 @@ def print_aggregated_subsystem_data(
     Args:
         post_processor (post_processing.PostProcessor): Post processor of the simulation.
     """
-    resources = post_processor.df_prepared["Resource"].unique()
+    resources = sorted(post_processor.df_prepared["Resource"].unique())
     print("\n------------- Subsystem Throughput -------------\n")
     for resource1 in resources:
         for resource2 in resources:
             data = post_processor.df_subsystem_throughput(resource1, resource2)
             if not data.empty:
-                print(f"Subsystem Throughput from {resource1} to {resource2}:")
+                print(f"\nSubsystem Throughput from {resource1} to {resource2}:")
                 print(data)
 
 
