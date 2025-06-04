@@ -853,6 +853,24 @@ def plot_WIP_per_resource(
         fig.write_image(image_path)
         return image_path
 
+def print_aggregated_subsystem_data(
+    post_processor: post_processing.PostProcessor,
+):
+    """
+    Prints the aggregated subsystem data of the simulation, comprising the throughput and WIP per subsystem.
+
+    Args:
+        post_processor (post_processing.PostProcessor): Post processor of the simulation.
+    """
+    resources = post_processor.df_prepared["Resource"].unique()
+    print("\n------------- Subsystem Throughput -------------\n")
+    for resource1 in resources:
+        for resource2 in resources:
+            data = post_processor.df_subsystem_throughput(resource1, resource2)
+            if not data.empty:
+                print(f"Subsystem Throughput from {resource1} to {resource2}:")
+                print(data)
+
 
 def print_aggregated_data(post_processor: post_processing.PostProcessor):
     """
